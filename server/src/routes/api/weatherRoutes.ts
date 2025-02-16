@@ -1,28 +1,61 @@
 import { Router, type Request, type Response } from "express";
+import dotenv from "dotenv";
 const router = Router();
+dotenv.config();
 
-// import HistoryService from '../../service/historyService.js';
-// import WeatherService from '../../service/weatherService.js';
+// Assuming HistoryService is already implemented and imported
+// import HistoryService from "../../service/historyService.js";
 
-// TODO: POST Request with city name to retrieve weather data
-router.post("/", (req: Request, res: Response) => {
-  console.log(req);
-  console.log(res);
-  // TODO: GET weather data from city name
+const weatherEndpoint = `${process.env.API_BASE_URL}/data/2.5/weather?appid=${process.env.API_KEY}&units=imperial`;
+const fiveDayForecastEndpoint = `${process.env.API_BASE_URL}/data/2.5/forecast?appid=${process.env.API_KEY}&units=imperial`;
 
-  // TODO: save city to search history
+router.post("/", async (req: Request, res: Response) => {
+  const cityName = encodeURIComponent(req.body.cityName);
+  const cityEndpoint = `${weatherEndpoint}&q=${cityName}`;
+  console.log(cityEndpoint);
+  const cityResponse = await fetch(cityEndpoint);
+  if (!cityResponse.ok) {
+    throw new Error(`Response status: ${cityResponse.status}`);
+  }
+  const cityData = await cityResponse.json();
+
+  const coords = cityData.coord;
+  const fiveDayendPoint = `${fiveDayForecastEndpoint}&lat=${coords.lat}&lon=${coords.lon}`;
+  const response = await fetch(fiveDayendPoint);
+  if (!cityResponse.ok) {
+    throw new Error(`Response status: ${response.status}`);
+  }
+  const data = await response.json();
+  const mappedData = data.list.map((x: any) => {
+    return {
+      city: data.city.name,
+      date: x.dt_txt,
+      icon: x.weather[0].icon,
+      iconDescription: x.weather[0].description,
+      tempF: x.main.temp,
+      windSpeed: x.wind.speed,
+      humidity: x.main.humidity,
+    };
+  });
+  console.log(mappedData);
+  res.setHeader("Content-Type", "application/json");
+  res.end(JSON.stringify(mappedData));
 });
 
-// TODO: GET search history
-router.get("/history", async (req: Request, res: Response) => {
-  console.log(req);
-  console.log(res);
-});
+// //GET search history
+// router.get("/history", async (req: Request, res: Response) => {
+//   try {
+//     const history = await HistoryService.getSearchHistory();
+//     res.setHeader("Content-Type", "application/json");
+//     res.end(JSON.stringify(history));
+//   } catch (error) {
+//     res.status(500).send({ error: "Failed to fetch search history" });
+//   }
+// });
 
-// * BONUS TODO: DELETE city from search history
-router.delete("/history/:id", async (req: Request, res: Response) => {
-  console.log(req);
-  console.log(res);
-});
+// // DELETE city from search history
+// router.delete("/history/:id", async (req: Request, res: Response) => {
+//   // Implementation for deleting a city from search history
+// });
 
 export default router;
