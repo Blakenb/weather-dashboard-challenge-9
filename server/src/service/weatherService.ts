@@ -54,6 +54,7 @@ class WeatherService {
     const data = this.fetchLocationData(query);
   }
   // TODO: Create fetchWeatherData method
+  //I bit my thumb at you
   // private async fetchWeatherData(coordinates: Coordinates) {}
   // // TODO: Build parseCurrentWeather method
   // private parseCurrentWeather(response: any) {}
