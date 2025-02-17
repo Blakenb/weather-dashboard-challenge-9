@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 const router = Router();
 dotenv.config();
 
-// Assuming HistoryService is already implemented and imported
-// import HistoryService from "../../service/historyService.js";
+// // Assuming HistoryService is already implemented and imported
+import HistoryService from "../../service/historyService.js";
 
 const weatherEndpoint = `${process.env.API_BASE_URL}/data/2.5/weather?appid=${process.env.API_KEY}&units=imperial`;
 const fiveDayForecastEndpoint = `${process.env.API_BASE_URL}/data/2.5/forecast?appid=${process.env.API_KEY}&units=imperial`;
@@ -42,20 +42,20 @@ router.post("/", async (req: Request, res: Response) => {
   res.end(JSON.stringify(mappedData));
 });
 
-// //GET search history
-// router.get("/history", async (req: Request, res: Response) => {
-//   try {
-//     const history = await HistoryService.getSearchHistory();
-//     res.setHeader("Content-Type", "application/json");
-//     res.end(JSON.stringify(history));
-//   } catch (error) {
-//     res.status(500).send({ error: "Failed to fetch search history" });
-//   }
-// });
+//GET search history
+router.get("/history", async (req: Request, res: Response) => {
+  try {
+    const history = await HistoryService.getSearchHistory();
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify(history));
+  } catch (error) {
+    res.status(500).send({ error: "Failed to fetch search history" });
+  }
+});
 
-// // DELETE city from search history
-// router.delete("/history/:id", async (req: Request, res: Response) => {
-//   // Implementation for deleting a city from search history
-// });
+// DELETE city from search history
+router.delete("/history/:id", async (req: Request, res: Response) => {
+  // Implementation for deleting a city from search history
+});
 
 export default router;
