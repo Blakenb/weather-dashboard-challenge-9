@@ -1,21 +1,92 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// TODO: Define an interface for the Coordinates object
 interface Coordinates {
   lon: number;
   lat: number;
 }
 
-// TODO: Define a class for the Weather object
+export interface FiveDayForecastResponse {
+  cod: string;
+  message: number;
+  cnt: number;
+  list: List[];
+  city: City;
+}
 
-// TODO: Complete the WeatherService class
+export interface List {
+  dt: number;
+  main: Main;
+  weather: Weather[];
+  clouds: Clouds;
+  wind: Wind;
+  visibility: number;
+  pop: number;
+  sys: Sys;
+  dt_txt: string;
+}
+
+export interface Main {
+  temp: number;
+  feels_like: number;
+  temp_min: number;
+  temp_max: number;
+  pressure: number;
+  sea_level: number;
+  grnd_level: number;
+  humidity: number;
+  temp_kf: number;
+}
+
+export interface Weather {
+  id: number;
+  main: string;
+  description: string;
+  icon: string;
+}
+
+export interface Clouds {
+  all: number;
+}
+
+export interface Wind {
+  speed: number;
+  deg: number;
+  gust: number;
+}
+
+export interface Sys {
+  pod: string;
+}
+
+export interface City {
+  id: number;
+  name: string;
+  coord: Coord;
+  country: string;
+  population: number;
+  timezone: number;
+  sunrise: number;
+  sunset: number;
+}
+
+export interface Coord {
+  lat: number;
+  lon: number;
+}
+
+// TODO: Define a class for the Weather object
+// class Weather {
+//   constructor() {}
+// }
+
 class WeatherService {
   baseURL: string;
   API_KEY: string;
-  cityName: string;
+
   private weatherEndpoint: string;
-  constructor(cityName: string) {
+  private fiveDayForecastEndpoint: string;
+  constructor() {
     if (!process.env.API_BASE_URL) {
       throw new Error(`API_BASE_URL not valid: ${process.env.API_BASE_URL}`);
     }
@@ -24,45 +95,66 @@ class WeatherService {
       throw new Error(`API_KEY not valid: ${process.env.API_KEY}`);
     }
     this.API_KEY = process.env.API_KEY;
-    this.cityName = cityName;
-    this.weatherEndpoint = `${process.env.API_BASE_URL}/data/2.5/weather?appid=${process.env.API_KEY}&units=imperial`;
-  }
 
-  // TODO: Create fetchLocationData method
+    this.weatherEndpoint = `${process.env.API_BASE_URL}/data/2.5/weather?appid=${process.env.API_KEY}&units=imperial`;
+    this.fiveDayForecastEndpoint = `${process.env.API_BASE_URL}/data/2.5/forecast?appid=${process.env.API_KEY}&units=imperial`;
+  }
 
   private async fetchLocationData(query: string) {
     const cityResponse = await fetch(query);
+    console.log(await cityResponse.json());
     if (!cityResponse.ok) {
       throw new Error(`Response status: ${cityResponse.status}`);
     }
     return await cityResponse.json();
   }
-  // TODO: Create destructureLocationData method
-  // private destructureLocationData(locationData: any): Coordinates {
 
-  // }
-  // TODO: Create buildGeocodeQuery method
-  private buildGeocodeQuery(): string {
-    const encodedQuery = encodeURIComponent(this.cityName);
-    return `${this.weatherEndpoint}&q=${encodedQuery}`;
+  private destructureLocationData(locationData: any): Coordinates {
+    const coordinates: Coordinates = {
+      lat: locationData.lat,
+      lon: locationData.lon,
+    };
+    return coordinates;
   }
-  // TODO: Create buildWeatherQuery method
-  // private buildWeatherQuery(coordinates: Coordinates): string {}
-  // TODO: Create fetchAndDestructureLocationData method
-  private async fetchAndDestructureLocationData() {
-    const query = this.buildGeocodeQuery();
+
+  private buildGeocodeQuery(cityName: string): string {
+    return `${this.weatherEndpoint}&q=${cityName}`;
+  }
+
+  private buildWeatherQuery(coordinates: Coordinates): string {
+    return `${this.fiveDayForecastEndpoint}&lat=${coordinates.lat}&lon=${coordinates.lon}`;
+  }
+
+  private async fetchAndDestructureLocationData(cityName: string) {
+    const query = this.buildGeocodeQuery(cityName);
     const data = this.fetchLocationData(query);
+    return data;
   }
-  // TODO: Create fetchWeatherData method
-  //I bit my thumb at you
-  // private async fetchWeatherData(coordinates: Coordinates) {}
-  // // TODO: Build parseCurrentWeather method
-  // private parseCurrentWeather(response: any) {}
+
+  private async fetchWeatherData(coordinates: Coordinates) {
+    const endPoint = this.buildWeatherQuery(coordinates);
+    return await fetch(endPoint);
+  }
+
+  private async parseCurrentWeather(
+    response: any
+  ): Promise<FiveDayForecastResponse> {
+    const data = (await response.json()) as FiveDayForecastResponse;
+    const list = data.list.filter((day: List) =>
+      day.dt_txt.includes("06:00:00")
+    );
+    data.list = list;
+    return data;
+  }
   // // TODO: Complete buildForecastArray method
   // private buildForecastArray(currentWeather: Weather, weatherData: any[]) {}
   // TODO: Complete getWeatherForCity method
   async getWeatherForCity(city: string) {
-    const cityData = this.fetchLocationData(city);
+    const cityData = await this.fetchAndDestructureLocationData(city);
+    const coordinates = this.destructureLocationData(cityData.coord);
+    const data = await this.fetchWeatherData(coordinates);
+    const fiveDayForecastData = await this.parseCurrentWeather(data);
+    console.log(fiveDayForecastData);
   }
 }
 
