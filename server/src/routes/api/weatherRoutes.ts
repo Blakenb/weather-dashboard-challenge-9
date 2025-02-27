@@ -1,64 +1,60 @@
-import { Router, type Request, type Response } from "express";
-import dotenv from "dotenv";
-import WeatherService from "../../service/weatherService.js";
+import { Router } from "express";
 const router = Router();
-dotenv.config();
 
-// // Assuming HistoryService is already implemented and imported
-// import HistoryService from "../../service/historyService.js";
+import HistoryService from "../../service/historyService.js";
+import WeatherService from "../../service/weatherService.js";
 
-// const weatherEndpoint = `${process.env.API_BASE_URL}/data/2.5/weather?appid=${process.env.API_KEY}&units=imperial`;
-// const fiveDayForecastEndpoint = `${process.env.API_BASE_URL}/data/2.5/forecast?appid=${process.env.API_KEY}&units=imperial`;
+// TODO: POST Request with city name to retrieve weather data
+router.post('/', async (req, res) => {
+  // TODO: GET weather data from city name
+  try {
+    const cityName: string = req.body.cityName;
+    console.log("Trying to find weather for city:", cityName);
 
-router.post("/", async (req: Request, _: Response) => {
-  const cityName = encodeURIComponent(req.body.cityName);
-  const result = await WeatherService.getWeatherForCity(cityName);
-  console.log(result);
-  // const cityEndpoint = `${weatherEndpoint}&q=${cityName}`;
-  // console.log(cityEndpoint);
-  // const cityResponse = await fetch(cityEndpoint);
-  // if (!cityResponse.ok) {
-  //   throw new Error(`Response status: ${cityResponse.status}`);
-  // }
-  // const cityData = await cityResponse.json();
+    if (!cityName) {
+      return res.status(400).json({ error: "City name is required" });
+    }
 
-  // const coords = cityData.coord;
-  // const fiveDayendPoint = `${fiveDayForecastEndpoint}&lat=${coords.lat}&lon=${coords.lon}`;
-  // const response = await fetch(fiveDayendPoint);
-  // if (!cityResponse.ok) {
-  //   throw new Error(`Response status: ${response.status}`);
-  // }
-  // const data = await response.json();
-  // const mappedData = data.list.map((x: any) => {
-  //   return {
-  //     city: data.city.name,
-  //     date: x.dt_txt,
-  //     icon: x.weather[0].icon,
-  //     iconDescription: x.weather[0].description,
-  //     tempF: x.main.temp,
-  //     windSpeed: x.wind.speed,
-  //     humidity: x.main.humidity,
-  //   };
-  // });
-  // console.log(mappedData);
-  // res.setHeader("Content-Type", "application/json");
-  // res.end(JSON.stringify(mappedData));
+    const weatherData = await WeatherService.getWeatherForCity(cityName);
+
+    // Save city to search history
+    await HistoryService.addCity(cityName);
+
+    return res.json(weatherData);
+  } catch (error) {
+    console.error("Error retrieving weather data:", error);
+    return res.status(500).json({ error: "Failed to retrieve weather data" });
+  }
 });
 
-//GET search history
-// router.get("/history", async (req: Request, res: Response) => {
-//   // try {
-//   //   const history = await HistoryService.getSearchHistory();
-//   //   res.setHeader("Content-Type", "application/json");
-//   //   res.end(JSON.stringify(history));
-//   // } catch (error) {
-//   //   res.status(500).send({ error: "Failed to fetch search history" });
-//   // }
-// });
+// GET weather data from search history
+router.get("/history", async (_req, res) => {
+  try {
+    const history = await HistoryService.getCities();
+    res.json(history);
+  } catch (error) {
+    console.error("Error retrieving search history:", error);
+    res.status(500).json({ error: "Failed to retrieve search history" });
+  }
+});
 
-// // DELETE city from search history
-// router.delete("/history/:id", async (req: Request, res: Response) => {
-//   // Implementation for deleting a city from search history
-// });
+// * BONUS TODO: DELETE city from search history
+router.delete("/history/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "City ID is required" });
+    }
+
+    await HistoryService.removeCity(id);
+    return res.json({ message: "City removed from search history" });
+  } catch (error) {
+    console.error("Error removing city from search history:", error);
+    return res
+      .status(500)
+      .json({ error: "Failed to remove city from search history" });
+  }
+});
 
 export default router;

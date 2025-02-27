@@ -79,7 +79,7 @@ Render Functions
 const renderCurrentWeather = (currentWeather: any): void => {
   const { city, date, icon, iconDescription, tempF, windSpeed, humidity } =
     currentWeather;
-  console.log(city);
+
   // convert the following to typescript
   heading.textContent = `${city} (${date})`;
   weatherIcon.setAttribute(
@@ -266,7 +266,6 @@ const handleSearchFormSubmit = (event: any): void => {
 const handleSearchHistoryClick = (event: any) => {
   if (event.target.matches(".history-btn")) {
     const city = event.target.textContent;
-    console.log(city);
     fetchWeather(city).then(getAndRenderHistory);
   }
 };
